@@ -1,7 +1,9 @@
 # VisionAI — C3: Detecção de Objetos + Análise por LLM
 
 **Aluno:** Henrique De Nadai Salvador e Jeferson Moraes Pereira de Sousa
+
 **Disciplina:** Robótica e Sistemas Inteligentes  
+
 **Unidade:** C3 — Integração com IA Generativa via Groq
 
 ---
