@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionAI — Detecção + Análise LLM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════ HEADER ══════ -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">VisionAI</span>
+        <span class="logo-tag">C3</span>
+      </div>
+      <div class="header-meta">
+        <span class="chip">SSD MobileNet</span>
+        <span class="chip chip-accent">Groq LLM</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ══════════════════════════════════════ PIPELINE STEPS ══ -->
+    <section class="pipeline-bar">
+      <div class="pipeline-step active" id="step1">
+        <span class="step-num">1</span>
+        <span class="step-label">Captura</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step" id="step2">
+        <span class="step-num">2</span>
+        <span class="step-label">Detecção</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step" id="step3">
+        <span class="step-num">3</span>
+        <span class="step-label">Análise LLM</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step" id="step4">
+        <span class="step-num">4</span>
+        <span class="step-label">Resultado</span>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ PAINEL ESQUERDO ══ -->
+    <div class="workspace">
+
+      <!-- Coluna esquerda: entrada + detecção -->
+      <div class="panel panel-left">
+
+        <div class="panel-header">
+          <h2>Detecção de Objetos</h2>
+          <div id="model-status" class="badge badge-loading">Carregando modelo…</div>
+        </div>
+
+        <!-- Controles de entrada -->
+        <div class="input-controls">
+          <label for="uploadFoto" class="btn btn-secondary">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"/></svg>
+            Carregar Foto
+          </label>
+          <input type="file" id="uploadFoto" accept="image/*" style="display:none">
+
+          <button id="btnWebcam" class="btn btn-secondary" onclick="toggleWebcam()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
+            Ligar Webcam
+          </button>
+
+          <div class="threshold-control">
+            <label for="thresholdSlider">Confiança mín.</label>
+            <input type="range" id="thresholdSlider" min="10" max="90" value="50" oninput="updateThreshold(this.value)">
+            <span id="thresholdValue">50%</span>
+          </div>
+        </div>
+
+        <!-- Área de visualização -->
+        <div class="media-container" id="mediaContainer">
+          <div class="media-placeholder" id="mediaPlaceholder">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="64">
+              <rect x="2" y="10" width="60" height="44" rx="6" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3"/>
+              <circle cx="20" cy="26" r="6" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 44l16-14 10 10 8-8 26 22" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <p>Carregue uma foto ou ligue a webcam para começar</p>
+          </div>
+          <img id="imgEstatica" style="display:none">
+          <video id="webcamVideo" autoplay playsinline muted style="display:none"></video>
+          <canvas id="overlayCanvas"></canvas>
+        </div>
+
+        <!-- Status da detecção -->
+        <div id="detection-status" class="detection-status">
+          <span id="statusText">Aguardando entrada…</span>
+        </div>
+
+        <!-- Dados brutos da C2 -->
+        <div class="raw-output" id="rawOutputSection" style="display:none">
+          <div class="raw-output-header">
+            <span class="label-mono">JSON — Saída C2 (SSD MobileNet)</span>
+            <button class="btn-copy" onclick="copiarJSON()" title="Copiar JSON">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="14"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
+              Copiar
+            </button>
+          </div>
+          <pre id="rawJSON" class="json-block"></pre>
+        </div>
+
+      </div><!-- /.panel-left -->
+
+      <!-- Coluna direita: análise LLM -->
+      <div class="panel panel-right">
+
+        <div class="panel-header">
+          <h2>Análise por IA Generativa</h2>
+          <div id="llm-badge" class="badge badge-idle">Aguardando detecção</div>
+        </div>
+
+        <!-- Métricas da chamada LLM -->
+        <div class="llm-meta" id="llmMeta" style="display:none">
+          <div class="meta-item">
+            <span class="meta-label">Modelo</span>
+            <span class="meta-value" id="metaModelo">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Tokens</span>
+            <span class="meta-value" id="metaTokens">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Latência</span>
+            <span class="meta-value" id="metaLatencia">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Temperatura</span>
+            <span class="meta-value">0.2</span>
+          </div>
+        </div>
+
+        <!-- Área de análise -->
+        <div class="analysis-area" id="analysisArea">
+          <div class="analysis-placeholder" id="analysisPlaceholder">
+            <div class="placeholder-icon">◈</div>
+            <p>A análise da LLM aparecerá aqui após a detecção de objetos.</p>
+            <p class="placeholder-hint">O pipeline envia os dados do SSD MobileNet automaticamente ao modelo <strong>Llama 3.3 70B</strong> via Groq.</p>
+          </div>
+          <div id="analysisContent" class="analysis-content" style="display:none"></div>
+          <div id="analysisLoader" class="analysis-loader" style="display:none">
+            <div class="loader-spinner"></div>
+            <p>Consultando <strong>Llama 3.3 70B</strong> via Groq…</p>
+          </div>
+        </div>
+
+        <!-- Botão de reanalise manual -->
+        <div id="reanaliseSection" style="display:none; margin-top:12px;">
+          <button class="btn btn-accent full-width" onclick="chamarGroq()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Reanalisar com LLM
+          </button>
+        </div>
+
+        <!-- Log de chamadas -->
+        <div class="log-section">
+          <div class="log-header">
+            <span class="label-mono">Log de Chamadas</span>
+            <button class="btn-copy" onclick="limparLog()">Limpar</button>
+          </div>
+          <div id="logContainer" class="log-container">
+            <span class="log-entry log-info">Sistema inicializado. Aguardando carregamento do modelo…</span>
+          </div>
+        </div>
+
+      </div><!-- /.panel-right -->
+
+    </div><!-- /.workspace -->
+
+  </main>
+
+  <!-- ══════════════════════════════════════ FOOTER ══════ -->
+  <footer class="app-footer">
+    <span>C3 · Robótica e Sistemas Inteligentes · Henrique De Nadai Salvador</span>
+    <span>SSD MobileNet + Groq Llama 3.3 70B</span>
+  </footer>
+
+  <!-- Scripts TensorFlow e COCO-SSD -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
